@@ -13,41 +13,40 @@
 #define P_SCL PC4
 #define P_RCK PC2
 
-#define MaxLEDs 64*3
-#define PWMres 100
+#define MaxLEDs 12
+#define PWMres 200
  
-uint8_t PWM[MaxLEDs];
-int8_t X, dX, eX, XChanged, YStart, YEnd;
-int8_t dY[MaxLEDs], eY[MaxLEDs];
+int PWM[MaxLEDs];
+int X, dX, eX, XChanged, YStart, YEnd;
+int dY[MaxLEDs], eY[MaxLEDs];
 
-uint8_t fademode = 0;
-const uint8_t numanimas = 2;
-uint8_t mux, idx;
+int fademode = 0;
+const int numanimas = 2;
+int mux, idx, hold;
  
 struct pattern {
-	uint8_t hold;
-	uint8_t fade;
-	uint8_t pwm[MaxLEDs];
+	int hold;
+	int fade;
+	int pwm[MaxLEDs];
 };
 
 
-const struct pattern AnimationA[2] ={
+struct pattern AnimationA[2] ={
 	{
-	10,1,
+	100,0,
 	{
-	255, 255, 255,
-	255, 255, 255,
-	255, 255, 255,
-	255, 255, 255}},
+	100, 100, 100,
+	100, 100, 100,
+	100, 100, 100,
+	100, 100, 100}},
 
-  	{
-	20,1,
-  	{
-	255, 0, 0,
-	0, 255, 0,
-	0, 0, 255,
-	80, 80, 80}},
-
+	{
+	100,0,
+	{
+	0,0,0,
+	0,0,0,
+	0,0,0,
+	0,0,0}},
 
 };
 
@@ -109,6 +108,7 @@ void fade() //2 bresenhams
 		else
 		{
 			X++;
+			hold++;
 			eX += dX-PWMres;
 			//setled mist
 			XChanged = 1;
@@ -117,9 +117,9 @@ void fade() //2 bresenhams
 	}
 }
 
-int main()
+void main()
 {
-	unsigned int i, k, patterncntr, hold;
+	unsigned int i, k, patterncntr;
 
 
 	DDRC = (1 << DDC_IN) | (1 << DDC_SCK) | (1 << DDC_G) | (1 << DDC_SCL) | (1 << DDC_RCK);
@@ -127,6 +127,8 @@ int main()
 	
 	PORTC = (1 << P_G) | (1 << P_SCL);
 	patterncntr = 0;
+  
+	hold = 0;
 
 	while (1) 
 	{
@@ -139,13 +141,14 @@ int main()
 
 			for (i = 0; i < MaxLEDs; i++)
 			{
-				eY[i] = 0;
-			  	YStart = AnimationA[patterncntr].pwm[i];
 				
+				eY[i] = 0;
+			  YStart = AnimationA[patterncntr].pwm[i];
+
 				if (patterncntr < numanimas-1) YEnd = AnimationA[patterncntr+1].pwm[i]; else YEnd = AnimationA[0].pwm[i];
 				//Y[i] = YStart;
 				dY[i] = YEnd-YStart;
-				dX = AnimationA[patterncntr].hold;
+				dX = AnimationA[patterncntr].hold; 
 				PWM[i] = AnimationA[patterncntr].pwm[i];
 			}
 
@@ -159,7 +162,7 @@ int main()
 					{
 						for (k=0; k<=5; k++)
 						{	
-							idx = k*mux*2;
+							idx = k+mux*6;
 							if (i < PWM[idx]) setLED(1); else setLED(0);
 						}
 						switch (mux)
@@ -185,7 +188,7 @@ int main()
 					}
 					PORTC &= ~(1 << P_G); // OE
 
-					/*
+/*					
 					for (k=0; k<=5; k++)
 					{	
 						if (i < PWM[k]) setLED(1); else setLED(0);
@@ -202,9 +205,9 @@ int main()
 					setLED(1);
 					commit();
 					PORTC &= ~(1 << P_G);
-					*/
+*/					
 				}
-				hold++;	
+			if (fademode == 0)	hold++;	
 			} 
 			hold = 0;
 			patterncntr++;	
