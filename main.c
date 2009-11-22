@@ -22,7 +22,7 @@ int dY[MaxLEDs], eY[MaxLEDs];
 
 int fademode = 0;
 const int numanimas = 2;
-int mux, idx, hold;
+int Hold, mux, idx;
  
 struct pattern {
 	int hold;
@@ -33,19 +33,19 @@ struct pattern {
 
 struct pattern AnimationA[2] ={
 	{
-	100,0,
+	50,2,
 	{
-	100, 100, 100,
-	100, 100, 100,
-	100, 100, 100,
-	100, 100, 100}},
+	0, 0, 0,
+	0, 0, 0,
+	0, 0, 0,
+	50, 50, 50}},
 
 	{
-	100,0,
+	50,2,
 	{
 	0,0,0,
 	0,0,0,
-	0,0,0,
+	50,50,50,
 	0,0,0}},
 
 };
@@ -89,7 +89,7 @@ void fade() //2 bresenhams
 			}
 			else
 			{
-				if (2*(eY[i] + dY[i]) > -PWMres)
+				if (2*(eY[i] + dY[i]) > (-1*PWMres))
 				{
 					eY[i] += dY[i];
 				}
@@ -108,16 +108,17 @@ void fade() //2 bresenhams
 		else
 		{
 			X++;
-			hold++;
+			Hold+=1;
 			eX += dX-PWMres;
 			//setled mist
 			XChanged = 1;
 		}
 
 	}
+	XChanged = 0;
 }
 
-void main()
+int main()
 {
 	unsigned int i, k, patterncntr;
 
@@ -128,7 +129,7 @@ void main()
 	PORTC = (1 << P_G) | (1 << P_SCL);
 	patterncntr = 0;
   
-	hold = 0;
+	Hold = 0;
 
 	while (1) 
 	{
@@ -151,13 +152,17 @@ void main()
 				dX = AnimationA[patterncntr].hold; 
 				PWM[i] = AnimationA[patterncntr].pwm[i];
 			}
+			Hold = 0;
 
-			while (hold <= AnimationA[patterncntr].hold)
+			while (Hold <= AnimationA[patterncntr].hold)
 			{
+				fademode = AnimationA[patterncntr].fade;
+				if (fademode > 0) fade();
+
 				for (i=0; i<=PWMres; i++)
 				{	
-					fademode = AnimationA[patterncntr].fade;
-					if (fademode > 0) fade();	
+				//	fademode = AnimationA[patterncntr].fade;
+				//	if (fademode > 0) fade();	
 					for (mux=0; mux<2; mux++)
 					{
 						for (k=0; k<=5; k++)
@@ -207,9 +212,9 @@ void main()
 					PORTC &= ~(1 << P_G);
 */					
 				}
-			if (fademode == 0)	hold++;	
+			if (fademode == 0)	Hold++;	
 			} 
-			hold = 0;
+			Hold = 0;
 			patterncntr++;	
 		}
 		patterncntr = 0;
