@@ -18,34 +18,38 @@
  
 uint8_t PWM[MaxLEDs];
 int8_t X, dX, eX, XChanged, YStart, YEnd;
-int8_t  Y[MaxLEDs], dY[MaxLEDs], eY[MaxLEDs];
+int8_t dY[MaxLEDs], eY[MaxLEDs];
 
 uint8_t fademode = 0;
+const uint8_t numanimas = 2;
+uint8_t mux, idx;
  
 struct pattern {
-uint8_t pwm[MaxLEDs];
-uint8_t hold;
-uint8_t fade;
+	uint8_t hold;
+	uint8_t fade;
+	uint8_t pwm[MaxLEDs];
 };
 
 
-struct pattern AnimationA[]={
-	{{
+const struct pattern AnimationA[2] ={
+	{
+	10,1,
+	{
 	255, 255, 255,
 	255, 255, 255,
 	255, 255, 255,
-	255, 255, 255}, 10, 1},
+	255, 255, 255}},
 
-  {{
+  	{
+	20,1,
+  	{
 	255, 0, 0,
 	0, 255, 0,
 	0, 0, 255,
-	80, 80, 80}, 10, 0},
+	80, 80, 80}},
 
 
 };
-
-
 
 void setLED(int state) 
 {
@@ -65,10 +69,11 @@ void commit()
 
 void fade() //2 bresenhams
 {
-	unsigned int i;
+	int i;
 
 	while (XChanged != 1)
 	{
+	    if (fademode == 1) XChanged = 1; 
 		for (i = 0; i < MaxLEDs; i++)
 		{
 			if (dY[i] > 0) 
@@ -79,7 +84,7 @@ void fade() //2 bresenhams
 				}
 				else
 				{
-					Y[i]++;
+					PWM[i]++;
 					eY[i] += (dY[i]-PWMres);
 				}
 			}
@@ -91,10 +96,11 @@ void fade() //2 bresenhams
 				}
 				else
 				{
-					Y[i]++;
+					PWM[i]++;
 					eY[i] += (dY[i]+PWMres);
 				}
 			}
+		}
 		
 		if (2*(eX + dX) < PWMres)
 		{
@@ -108,7 +114,6 @@ void fade() //2 bresenhams
 			XChanged = 1;
 		}
 
-		}
 	}
 }
 
@@ -120,14 +125,13 @@ int main()
 	DDRC = (1 << DDC_IN) | (1 << DDC_SCK) | (1 << DDC_G) | (1 << DDC_SCL) | (1 << DDC_RCK);
 	
 	
-
 	PORTC = (1 << P_G) | (1 << P_SCL);
 	patterncntr = 0;
 
 	while (1) 
 	{
 	
-		while (patterncntr <= 0)
+		while (patterncntr < numanimas)
 		{
 			X = 0;
 			eX = 0;
@@ -137,8 +141,9 @@ int main()
 			{
 				eY[i] = 0;
 			  	YStart = AnimationA[patterncntr].pwm[i];
-				YEnd = AnimationA[patterncntr+1].pwm[i];
-				Y[i] = YStart;
+				
+				if (patterncntr < numanimas-1) YEnd = AnimationA[patterncntr+1].pwm[i]; else YEnd = AnimationA[0].pwm[i];
+				//Y[i] = YStart;
 				dY[i] = YEnd-YStart;
 				dX = AnimationA[patterncntr].hold;
 				PWM[i] = AnimationA[patterncntr].pwm[i];
@@ -148,6 +153,39 @@ int main()
 			{
 				for (i=0; i<=PWMres; i++)
 				{	
+					fademode = AnimationA[patterncntr].fade;
+					if (fademode > 0) fade();	
+					for (mux=0; mux<2; mux++)
+					{
+						for (k=0; k<=5; k++)
+						{	
+							idx = k*mux*2;
+							if (i < PWM[idx]) setLED(1); else setLED(0);
+						}
+						switch (mux)
+						{
+							case 0 :
+							   setLED(1);
+							   setLED(0);
+							   break;
+							case 1 :
+							   setLED(0);
+							   setLED(1);
+							   break;
+							case 2 :
+							   setLED(1);
+							   setLED(0);
+							   break;
+							case 3 :
+							   setLED(1);
+							   setLED(0);
+							   break;
+						}	
+						commit();
+					}
+					PORTC &= ~(1 << P_G); // OE
+
+					/*
 					for (k=0; k<=5; k++)
 					{	
 						if (i < PWM[k]) setLED(1); else setLED(0);
@@ -164,6 +202,7 @@ int main()
 					setLED(1);
 					commit();
 					PORTC &= ~(1 << P_G);
+					*/
 				}
 				hold++;	
 			} 
