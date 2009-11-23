@@ -1,5 +1,7 @@
 #include <inttypes.h>
 #include <avr/io.h>
+#include <avr/pgmspace.h>
+
 
 #define DDC_IN DDC0
 #define DDC_SCK DDC3
@@ -13,40 +15,55 @@
 #define P_SCL PC4
 #define P_RCK PC2
 
-#define MaxLEDs 12
-#define PWMres 200
+#define MaxLEDs 3*4*4*4
+#define PWMres 100
  
-int PWM[MaxLEDs];
-int X, dX, eX, XChanged, YStart, YEnd;
-int dY[MaxLEDs], eY[MaxLEDs];
+int8_t X, dX, eX, XChanged, YStart, YEnd;
+int8_t PWM[MaxLEDs], dY[MaxLEDs], eY[MaxLEDs];
 
-int fademode = 0;
-const int numanimas = 2;
-int Hold, mux, idx;
+int8_t fademode = 0;
+int8_t numanimas = 4;
+int8_t Hold, mux, idx;
  
 struct pattern {
-	int hold;
-	int fade;
-	int pwm[MaxLEDs];
+	uint8_t hold;
+	uint8_t fade;
+	uint8_t pwm[MaxLEDs];
 };
 
 
-struct pattern AnimationA[2] ={
+struct pattern AnimationA[4] PROGMEM ={
 	{
-	50,2,
+	100,2,
 	{
 	0, 0, 0,
+	0, 100, 0,
 	0, 0, 0,
-	0, 0, 0,
-	50, 50, 50}},
+	20, 20, 20}},
 
 	{
 	50,2,
 	{
+	100,0,0,
+	0,0,0,
+	0,100,100,
+	100,100,100}},
+
+	{
+	25,2,
+	{
+	0,80,0,
+	90,100,0,
+	0,0,0,
+	10,10,10}},
+
+		{
+	10,2,
+	{
 	0,0,0,
 	0,0,0,
-	50,50,50,
-	0,0,0}},
+	0,0,0,
+	100,100,100}}, 
 
 };
 
@@ -95,7 +112,7 @@ void fade() //2 bresenhams
 				}
 				else
 				{
-					PWM[i]++;
+					if (PWM[i] > 0) PWM[i]--; //BugFixPWMDec 09.11.23
 					eY[i] += (dY[i]+PWMres);
 				}
 			}
@@ -108,9 +125,8 @@ void fade() //2 bresenhams
 		else
 		{
 			X++;
-			Hold+=1;
+			Hold++;
 			eX += dX-PWMres;
-			//setled mist
 			XChanged = 1;
 		}
 
@@ -139,30 +155,28 @@ int main()
 			X = 0;
 			eX = 0;
 			XChanged = 0;
+			dX = pgm_read_byte(&AnimationA[patterncntr].hold);
+			fademode = pgm_read_byte(&AnimationA[patterncntr].fade);
 
 			for (i = 0; i < MaxLEDs; i++)
-			{
-				
+			{	
 				eY[i] = 0;
-			  YStart = AnimationA[patterncntr].pwm[i];
-
-				if (patterncntr < numanimas-1) YEnd = AnimationA[patterncntr+1].pwm[i]; else YEnd = AnimationA[0].pwm[i];
-				//Y[i] = YStart;
-				dY[i] = YEnd-YStart;
-				dX = AnimationA[patterncntr].hold; 
-				PWM[i] = AnimationA[patterncntr].pwm[i];
+			  	YStart = pgm_read_byte(&AnimationA[patterncntr].pwm[i]);
+				if (patterncntr < numanimas-1) idx = patterncntr+1; else idx = 0;
+				YEnd = pgm_read_byte(&AnimationA[idx].pwm[i]);
+				dY[i] = YEnd-YStart;		 
+				PWM[i] = pgm_read_byte(&AnimationA[patterncntr].pwm[i]);
 			}
 			Hold = 0;
 
-			while (Hold <= AnimationA[patterncntr].hold)
+			while (Hold <= pgm_read_byte(&AnimationA[patterncntr].hold))
 			{
-				fademode = AnimationA[patterncntr].fade;
+				
 				if (fademode > 0) fade();
 
 				for (i=0; i<=PWMres; i++)
 				{	
-				//	fademode = AnimationA[patterncntr].fade;
-				//	if (fademode > 0) fade();	
+					
 					for (mux=0; mux<2; mux++)
 					{
 						for (k=0; k<=5; k++)
@@ -173,12 +187,12 @@ int main()
 						switch (mux)
 						{
 							case 0 :
-							   setLED(1);
 							   setLED(0);
+							   setLED(1);
 							   break;
 							case 1 :
-							   setLED(0);
 							   setLED(1);
+							   setLED(0);
 							   break;
 							case 2 :
 							   setLED(1);
@@ -191,26 +205,7 @@ int main()
 						}	
 						commit();
 					}
-					PORTC &= ~(1 << P_G); // OE
-
-/*					
-					for (k=0; k<=5; k++)
-					{	
-						if (i < PWM[k]) setLED(1); else setLED(0);
-					}
-					setLED(1);
-					setLED(0);
-					commit();
-	
-					for (k=6; k<=11; k++)
-					{
-						if (i < PWM[k]) setLED(1); else setLED(0);
-					}
-					setLED(0);
-					setLED(1);
-					commit();
-					PORTC &= ~(1 << P_G);
-*/					
+				//	PORTC &= ~(1 << P_G); // OE				
 				}
 			if (fademode == 0)	Hold++;	
 			} 
