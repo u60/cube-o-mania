@@ -1,7 +1,8 @@
 #include <inttypes.h>
 #include <avr/io.h>
 #include <avr/pgmspace.h>
-
+#include "card.h"
+#include "usart.h"
 
 #define DDC_IN DDC0
 #define DDC_SCK DDC3
@@ -16,7 +17,7 @@
 #define P_RCK PC2
 
 #define MaxLEDs 3*4*4*4
-#define PWMres 100
+#define PWMres 200
  
 int8_t X, dX, eX, XChanged, YStart, YEnd;
 int8_t PWM[MaxLEDs], dY[MaxLEDs], eY[MaxLEDs];
@@ -147,6 +148,9 @@ int main()
   
 	Hold = 0;
 
+	CARDinit();
+	USARTinit();
+
 	while (1) 
 	{
 	
@@ -177,6 +181,9 @@ int main()
 				for (i=0; i<=PWMres; i++)
 				{	
 					
+					CARDloop();
+					USARTloop();
+
 					for (mux=0; mux<2; mux++)
 					{
 						for (k=0; k<=5; k++)
