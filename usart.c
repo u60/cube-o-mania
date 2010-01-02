@@ -1,3 +1,5 @@
+//02.01.2010 not functional, see ToDo 
+
 #include "usart.h"
 
 uint8_t USARTstatus;
@@ -9,7 +11,7 @@ int LoopCnt;
 void USARTinit()
 {
 	UCSRB |= (1<<TXEN);                            // UART TX einschalten
-    UCSRC |= (1<<URSEL)|(1 << UCSZ1)|(1 << UCSZ0); // Asynchron 8N1  
+//ToDo    UCSRC |= (1<<URSEL)|(1 << UCSZ01)|(1 << UCSZ00); // Asynchron 8N1  
     UBRRH = UBRR_VAL >> 8;
     UBRRL = UBRR_VAL & 0xFF;
 	UCSRB |= ( 1 << RXEN );	// Receiver

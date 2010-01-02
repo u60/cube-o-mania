@@ -4,17 +4,32 @@
 #include "card.h"
 #include "usart.h"
 
-#define DDC_IN DDC0
-#define DDC_SCK DDC3
-#define DDC_G DDC1
-#define DDC_SCL DDC4
-#define DDC_RCK DDC2
+//74HC595 
+//Serial In
+#define DataPort PORTC
+#define DDC_IN1 DDC0
+#define DDC_IN2 DDC1
+#define DDC_IN3 DDC2
+#define DDC_IN4 DDC3
+#define P_IN1 PC0
+#define P_IN2 PC1
+#define P_IN3 PC2
+#define P_IN4 PC3
 
-#define P_IN PC0
-#define P_SCK PC3
-#define P_G PC1
-#define P_SCL PC4
-#define P_RCK PC2
+//Serial Clock
+#define ClockPort PORTB
+#define DDB_T1 DDB1
+#define DDB_SCK DDB2
+#define P_SCK PB2
+
+//Latch (RCK)
+#define LatchPort PORTD
+#define DDD_RCK DDD5
+#define P_RCK PD5
+
+//OE 74HC595 and 74ACT540
+#define DDD_OE	DDD2
+#define P_OE PD2
 
 #define MaxLEDs 3*4*4*4
 #define PWMres 200
@@ -68,20 +83,30 @@ struct pattern AnimationA[4] PROGMEM ={
 
 };
 
-void setLED(int state) 
+
+void InitPorts()
 {
-	if (state == 1 ) PORTC &= ~(1 << P_IN); else PORTC |= (1 << P_IN);
-  	PORTC &= ~(1 << P_SCK);
- 	PORTC |= (1 << P_SCK);
-  	PORTC &= ~(1 << P_SCK);
+	DDRB = (1 << DDB_SCK) | (1 << DDB_T1);
+	DDRC = (1 << DDC_IN1) | (1 << DDC_IN2) | (1 << DDC_IN3) | (1 << DDC_IN4);
+	DDRD = (1 << DDD_OE) | (1 << DDD_RCK);
+	DataPort = 0;
+	ClockPort = 0;
 }
 
-void commit()
+void setLED(int state) 
 {
-	PORTC &= ~(1 << P_RCK);
-	PORTC |= (1 << P_RCK);
-	PORTC &= ~(1 << P_RCK);
-	PORTC &= ~(1 << P_G);
+	DataPort = state;
+  	ClockPort &= ~(1 << P_SCK);
+ 	ClockPort |= (1 << P_SCK);
+  	ClockPort &= ~(1 << P_SCK);
+}
+
+void latch()
+{
+	LatchPort &= ~(1 << P_RCK);
+	LatchPort |= (1 << P_RCK);
+	LatchPort &= ~(1 << P_RCK);
+	LatchPort &= ~(1 << P_OE);
 }
 
 void fade() //2 bresenhams
@@ -139,15 +164,10 @@ int main()
 {
 	unsigned int i, k, patterncntr;
 
-
-	DDRC = (1 << DDC_IN) | (1 << DDC_SCK) | (1 << DDC_G) | (1 << DDC_SCL) | (1 << DDC_RCK);
-	
-	
-	PORTC = (1 << P_G) | (1 << P_SCL);
 	patterncntr = 0;
-  
 	Hold = 0;
 
+	InitPorts();
 	CARDinit();
 	USARTinit();
 
@@ -210,7 +230,7 @@ int main()
 							   setLED(0);
 							   break;
 						}	
-						commit();
+						latch();
 					}
 				//	PORTC &= ~(1 << P_G); // OE				
 				}
