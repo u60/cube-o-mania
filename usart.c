@@ -1,5 +1,4 @@
-//02.01.2010 not functional, see ToDo 
-
+//02.01.2010 prepared for ATMega644
 
 #include "usart.h"
 
@@ -11,9 +10,9 @@ int LoopCnt;
 // 9600Baud
 void USARTinit()
 {
-	UCSRB |= (1<<TXEN);                            // UART TX einschalten
-//ToDo    UCSRC |= (1<<URSEL)|(1 << UCSZ01)|(1 << UCSZ00); // Asynchron 8N1  
-    UBRRH = UBRR_VAL >> 8;
+	UCSRB |= (1<<TXEN);  // UART TX einschalten
+    UCSRC = (1<<USBS0)|(3 << UCSZ00); // Asynchron 8N1     
+	UBRRH = UBRR_VAL >> 8;
     UBRRL = UBRR_VAL & 0xFF;
 	UCSRB |= ( 1 << RXEN );	// Receiver
 	RXptr = 0;
@@ -22,7 +21,7 @@ void USARTinit()
 	USARTstatus = 0;
 }
 
-// called every ca. 40µs
+// called every ca. 40us
 void USARTloop()
 {
 	if (UCSRA & (1<<RXC)) 

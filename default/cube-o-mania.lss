@@ -3,29 +3,29 @@ cube-o-mania.elf:     file format elf32-avr
 
 Sections:
 Idx Name          Size      VMA       LMA       File off  Algn
-  0 .data         00000002  00800100  000007ea  0000087e  2**0
+  0 .data         00000002  00800100  000007f0  00000884  2**0
                   CONTENTS, ALLOC, LOAD, DATA
-  1 .text         000007ea  00000000  00000000  00000094  2**1
+  1 .text         000007f0  00000000  00000000  00000094  2**1
                   CONTENTS, ALLOC, LOAD, READONLY, CODE
-  2 .bss          00000271  00800102  00800102  00000880  2**0
+  2 .bss          00000271  00800102  00800102  00000886  2**0
                   ALLOC
-  3 .debug_aranges 00000060  00000000  00000000  00000880  2**0
+  3 .debug_aranges 00000060  00000000  00000000  00000886  2**0
                   CONTENTS, READONLY, DEBUGGING
-  4 .debug_pubnames 00000194  00000000  00000000  000008e0  2**0
+  4 .debug_pubnames 00000194  00000000  00000000  000008e6  2**0
                   CONTENTS, READONLY, DEBUGGING
-  5 .debug_info   00000649  00000000  00000000  00000a74  2**0
+  5 .debug_info   00000649  00000000  00000000  00000a7a  2**0
                   CONTENTS, READONLY, DEBUGGING
-  6 .debug_abbrev 0000028a  00000000  00000000  000010bd  2**0
+  6 .debug_abbrev 0000028a  00000000  00000000  000010c3  2**0
                   CONTENTS, READONLY, DEBUGGING
-  7 .debug_line   000005e4  00000000  00000000  00001347  2**0
+  7 .debug_line   000005ec  00000000  00000000  0000134d  2**0
                   CONTENTS, READONLY, DEBUGGING
-  8 .debug_frame  000000c0  00000000  00000000  0000192c  2**2
+  8 .debug_frame  000000c0  00000000  00000000  0000193c  2**2
                   CONTENTS, READONLY, DEBUGGING
-  9 .debug_str    0000018b  00000000  00000000  000019ec  2**0
+  9 .debug_str    0000018b  00000000  00000000  000019fc  2**0
                   CONTENTS, READONLY, DEBUGGING
- 10 .debug_loc    000001be  00000000  00000000  00001b77  2**0
+ 10 .debug_loc    000001be  00000000  00000000  00001b87  2**0
                   CONTENTS, READONLY, DEBUGGING
- 11 .debug_ranges 00000048  00000000  00000000  00001d35  2**0
+ 11 .debug_ranges 00000048  00000000  00000000  00001d45  2**0
                   CONTENTS, READONLY, DEBUGGING
 
 Disassembly of section .text:
@@ -82,7 +82,7 @@ Disassembly of section .text:
  384:	11 e0       	ldi	r17, 0x01	; 1
  386:	a0 e0       	ldi	r26, 0x00	; 0
  388:	b1 e0       	ldi	r27, 0x01	; 1
- 38a:	ea ee       	ldi	r30, 0xEA	; 234
+ 38a:	e0 ef       	ldi	r30, 0xF0	; 240
  38c:	f7 e0       	ldi	r31, 0x07	; 7
  38e:	02 c0       	rjmp	.+4      	; 0x394 <.do_copy_data_start>
 
@@ -109,7 +109,7 @@ Disassembly of section .text:
  3a6:	b1 07       	cpc	r27, r17
  3a8:	e1 f7       	brne	.-8      	; 0x3a2 <.do_clear_bss_loop>
  3aa:	0e 94 71 02 	call	0x4e2	; 0x4e2 <main>
- 3ae:	0c 94 f3 03 	jmp	0x7e6	; 0x7e6 <_exit>
+ 3ae:	0c 94 f6 03 	jmp	0x7ec	; 0x7ec <_exit>
 
 000003b2 <__bad_interrupt>:
  3b2:	0c 94 00 00 	jmp	0	; 0x0 <__vectors>
@@ -583,7 +583,7 @@ void setLED(int state)
 					CARDloop();
  5fc:	0e 94 78 03 	call	0x6f0	; 0x6f0 <CARDloop>
 					USARTloop();
- 600:	0e 94 a0 03 	call	0x740	; 0x740 <USARTloop>
+ 600:	0e 94 a3 03 	call	0x746	; 0x746 <USARTloop>
  604:	80 91 c6 01 	lds	r24, 0x01C6
  608:	40 e0       	ldi	r20, 0x00	; 0
  60a:	60 e0       	ldi	r22, 0x00	; 0
@@ -838,135 +838,137 @@ int LoopCnt;
 // 9600Baud
 void USARTinit()
 {
-	UCSRB |= (1<<TXEN);                            // UART TX einschalten
+	UCSRB |= (1<<TXEN);  // UART TX einschalten
  714:	e1 ec       	ldi	r30, 0xC1	; 193
  716:	f0 e0       	ldi	r31, 0x00	; 0
  718:	80 81       	ld	r24, Z
  71a:	88 60       	ori	r24, 0x08	; 8
  71c:	80 83       	st	Z, r24
-//DoTo    UCSRC |= (1<<URSEL)|(1 << UCSZ01)|(1 << UCSZ00); // Asynchron 8N1  
-    UBRRH = UBRR_VAL >> 8;
- 71e:	10 92 c5 00 	sts	0x00C5, r1
+    UCSRC = (1<<USBS0)|(3 << UCSZ00); // Asynchron 8N1     
+ 71e:	8e e0       	ldi	r24, 0x0E	; 14
+ 720:	80 93 c2 00 	sts	0x00C2, r24
+	UBRRH = UBRR_VAL >> 8;
+ 724:	10 92 c5 00 	sts	0x00C5, r1
     UBRRL = UBRR_VAL & 0xFF;
- 722:	87 e6       	ldi	r24, 0x67	; 103
- 724:	80 93 c4 00 	sts	0x00C4, r24
+ 728:	87 e6       	ldi	r24, 0x67	; 103
+ 72a:	80 93 c4 00 	sts	0x00C4, r24
 	UCSRB |= ( 1 << RXEN );	// Receiver
- 728:	80 81       	ld	r24, Z
- 72a:	80 61       	ori	r24, 0x10	; 16
- 72c:	80 83       	st	Z, r24
+ 72e:	80 81       	ld	r24, Z
+ 730:	80 61       	ori	r24, 0x10	; 16
+ 732:	80 83       	st	Z, r24
 	RXptr = 0;
- 72e:	10 92 5e 03 	sts	0x035E, r1
+ 734:	10 92 5e 03 	sts	0x035E, r1
 	RXcount = 0;
- 732:	10 92 72 03 	sts	0x0372, r1
+ 738:	10 92 72 03 	sts	0x0372, r1
 	TXptr = 0;
- 736:	10 92 5f 03 	sts	0x035F, r1
+ 73c:	10 92 5f 03 	sts	0x035F, r1
 	USARTstatus = 0;
- 73a:	10 92 4d 03 	sts	0x034D, r1
+ 740:	10 92 4d 03 	sts	0x034D, r1
 }
- 73e:	08 95       	ret
+ 744:	08 95       	ret
 
-00000740 <USARTloop>:
+00000746 <USARTloop>:
 
-// called every ca. 40µs
+// called every ca. 40us
 void USARTloop()
 {
 	if (UCSRA & (1<<RXC)) 
- 740:	80 91 c0 00 	lds	r24, 0x00C0
- 744:	87 ff       	sbrs	r24, 7
- 746:	16 c0       	rjmp	.+44     	; 0x774 <USARTloop+0x34>
+ 746:	80 91 c0 00 	lds	r24, 0x00C0
+ 74a:	87 ff       	sbrs	r24, 7
+ 74c:	16 c0       	rjmp	.+44     	; 0x77a <USARTloop+0x34>
 	{
 		RXbuffer[RXptr] = UDR;
- 748:	90 91 5e 03 	lds	r25, 0x035E
- 74c:	80 91 c6 00 	lds	r24, 0x00C6
- 750:	e9 2f       	mov	r30, r25
- 752:	f0 e0       	ldi	r31, 0x00	; 0
- 754:	e0 5a       	subi	r30, 0xA0	; 160
- 756:	fc 4f       	sbci	r31, 0xFC	; 252
- 758:	80 83       	st	Z, r24
+ 74e:	90 91 5e 03 	lds	r25, 0x035E
+ 752:	80 91 c6 00 	lds	r24, 0x00C6
+ 756:	e9 2f       	mov	r30, r25
+ 758:	f0 e0       	ldi	r31, 0x00	; 0
+ 75a:	e0 5a       	subi	r30, 0xA0	; 160
+ 75c:	fc 4f       	sbci	r31, 0xFC	; 252
+ 75e:	80 83       	st	Z, r24
 		if (RXptr < MaxRX -1) RXptr++; else RXptr = 0;
- 75a:	9f 30       	cpi	r25, 0x0F	; 15
- 75c:	20 f4       	brcc	.+8      	; 0x766 <USARTloop+0x26>
- 75e:	9f 5f       	subi	r25, 0xFF	; 255
- 760:	90 93 5e 03 	sts	0x035E, r25
- 764:	02 c0       	rjmp	.+4      	; 0x76a <USARTloop+0x2a>
- 766:	10 92 5e 03 	sts	0x035E, r1
+ 760:	9f 30       	cpi	r25, 0x0F	; 15
+ 762:	20 f4       	brcc	.+8      	; 0x76c <USARTloop+0x26>
+ 764:	9f 5f       	subi	r25, 0xFF	; 255
+ 766:	90 93 5e 03 	sts	0x035E, r25
+ 76a:	02 c0       	rjmp	.+4      	; 0x770 <USARTloop+0x2a>
+ 76c:	10 92 5e 03 	sts	0x035E, r1
 		RXcount++;
- 76a:	80 91 72 03 	lds	r24, 0x0372
- 76e:	8f 5f       	subi	r24, 0xFF	; 255
- 770:	80 93 72 03 	sts	0x0372, r24
+ 770:	80 91 72 03 	lds	r24, 0x0372
+ 774:	8f 5f       	subi	r24, 0xFF	; 255
+ 776:	80 93 72 03 	sts	0x0372, r24
 	}
 	switch (USARTstatus) 
- 774:	80 91 4d 03 	lds	r24, 0x034D
- 778:	81 30       	cpi	r24, 0x01	; 1
- 77a:	59 f0       	breq	.+22     	; 0x792 <USARTloop+0x52>
- 77c:	81 30       	cpi	r24, 0x01	; 1
- 77e:	18 f0       	brcs	.+6      	; 0x786 <USARTloop+0x46>
- 780:	82 30       	cpi	r24, 0x02	; 2
- 782:	39 f5       	brne	.+78     	; 0x7d2 <USARTloop+0x92>
- 784:	24 c0       	rjmp	.+72     	; 0x7ce <USARTloop+0x8e>
+ 77a:	80 91 4d 03 	lds	r24, 0x034D
+ 77e:	81 30       	cpi	r24, 0x01	; 1
+ 780:	59 f0       	breq	.+22     	; 0x798 <USARTloop+0x52>
+ 782:	81 30       	cpi	r24, 0x01	; 1
+ 784:	18 f0       	brcs	.+6      	; 0x78c <USARTloop+0x46>
+ 786:	82 30       	cpi	r24, 0x02	; 2
+ 788:	39 f5       	brne	.+78     	; 0x7d8 <USARTloop+0x92>
+ 78a:	24 c0       	rjmp	.+72     	; 0x7d4 <USARTloop+0x8e>
 	{
 		case 0:
 			if (RXcount > 0)
- 786:	80 91 72 03 	lds	r24, 0x0372
- 78a:	88 23       	and	r24, r24
- 78c:	11 f1       	breq	.+68     	; 0x7d2 <USARTloop+0x92>
+ 78c:	80 91 72 03 	lds	r24, 0x0372
+ 790:	88 23       	and	r24, r24
+ 792:	11 f1       	breq	.+68     	; 0x7d8 <USARTloop+0x92>
 			{
 				USARTstatus++;
- 78e:	81 e0       	ldi	r24, 0x01	; 1
- 790:	1b c0       	rjmp	.+54     	; 0x7c8 <USARTloop+0x88>
+ 794:	81 e0       	ldi	r24, 0x01	; 1
+ 796:	1b c0       	rjmp	.+54     	; 0x7ce <USARTloop+0x88>
 			}
 			break;
 		case 1:
 			if (UCSRA & (1<<UDRE))
- 792:	80 91 c0 00 	lds	r24, 0x00C0
- 796:	85 ff       	sbrs	r24, 5
- 798:	1c c0       	rjmp	.+56     	; 0x7d2 <USARTloop+0x92>
+ 798:	80 91 c0 00 	lds	r24, 0x00C0
+ 79c:	85 ff       	sbrs	r24, 5
+ 79e:	1c c0       	rjmp	.+56     	; 0x7d8 <USARTloop+0x92>
 			{
 				UDR = RXbuffer[TXptr]; // send
- 79a:	90 91 5f 03 	lds	r25, 0x035F
- 79e:	e9 2f       	mov	r30, r25
- 7a0:	f0 e0       	ldi	r31, 0x00	; 0
- 7a2:	e0 5a       	subi	r30, 0xA0	; 160
- 7a4:	fc 4f       	sbci	r31, 0xFC	; 252
- 7a6:	80 81       	ld	r24, Z
- 7a8:	80 93 c6 00 	sts	0x00C6, r24
+ 7a0:	90 91 5f 03 	lds	r25, 0x035F
+ 7a4:	e9 2f       	mov	r30, r25
+ 7a6:	f0 e0       	ldi	r31, 0x00	; 0
+ 7a8:	e0 5a       	subi	r30, 0xA0	; 160
+ 7aa:	fc 4f       	sbci	r31, 0xFC	; 252
+ 7ac:	80 81       	ld	r24, Z
+ 7ae:	80 93 c6 00 	sts	0x00C6, r24
 				if (TXptr < MaxRX -1) TXptr++; else TXptr = 0;
- 7ac:	9f 30       	cpi	r25, 0x0F	; 15
- 7ae:	20 f4       	brcc	.+8      	; 0x7b8 <USARTloop+0x78>
- 7b0:	9f 5f       	subi	r25, 0xFF	; 255
- 7b2:	90 93 5f 03 	sts	0x035F, r25
- 7b6:	02 c0       	rjmp	.+4      	; 0x7bc <USARTloop+0x7c>
- 7b8:	10 92 5f 03 	sts	0x035F, r1
+ 7b2:	9f 30       	cpi	r25, 0x0F	; 15
+ 7b4:	20 f4       	brcc	.+8      	; 0x7be <USARTloop+0x78>
+ 7b6:	9f 5f       	subi	r25, 0xFF	; 255
+ 7b8:	90 93 5f 03 	sts	0x035F, r25
+ 7bc:	02 c0       	rjmp	.+4      	; 0x7c2 <USARTloop+0x7c>
+ 7be:	10 92 5f 03 	sts	0x035F, r1
 				RXcount--;
- 7bc:	80 91 72 03 	lds	r24, 0x0372
- 7c0:	81 50       	subi	r24, 0x01	; 1
- 7c2:	80 93 72 03 	sts	0x0372, r24
+ 7c2:	80 91 72 03 	lds	r24, 0x0372
+ 7c6:	81 50       	subi	r24, 0x01	; 1
+ 7c8:	80 93 72 03 	sts	0x0372, r24
 				USARTstatus++;
- 7c6:	82 e0       	ldi	r24, 0x02	; 2
- 7c8:	80 93 4d 03 	sts	0x034D, r24
- 7cc:	02 c0       	rjmp	.+4      	; 0x7d2 <USARTloop+0x92>
+ 7cc:	82 e0       	ldi	r24, 0x02	; 2
+ 7ce:	80 93 4d 03 	sts	0x034D, r24
+ 7d2:	02 c0       	rjmp	.+4      	; 0x7d8 <USARTloop+0x92>
 			}
 			break;
 		case 2:
 			{
 				USARTstatus = 0;
- 7ce:	10 92 4d 03 	sts	0x034D, r1
+ 7d4:	10 92 4d 03 	sts	0x034D, r1
 				break;
 			}
 
 	}
 
 	LoopCnt++;
- 7d2:	80 91 70 03 	lds	r24, 0x0370
- 7d6:	90 91 71 03 	lds	r25, 0x0371
- 7da:	01 96       	adiw	r24, 0x01	; 1
- 7dc:	90 93 71 03 	sts	0x0371, r25
- 7e0:	80 93 70 03 	sts	0x0370, r24
+ 7d8:	80 91 70 03 	lds	r24, 0x0370
+ 7dc:	90 91 71 03 	lds	r25, 0x0371
+ 7e0:	01 96       	adiw	r24, 0x01	; 1
+ 7e2:	90 93 71 03 	sts	0x0371, r25
+ 7e6:	80 93 70 03 	sts	0x0370, r24
 }
- 7e4:	08 95       	ret
+ 7ea:	08 95       	ret
 
-000007e6 <_exit>:
- 7e6:	f8 94       	cli
+000007ec <_exit>:
+ 7ec:	f8 94       	cli
 
-000007e8 <__stop_program>:
- 7e8:	ff cf       	rjmp	.-2      	; 0x7e8 <__stop_program>
+000007ee <__stop_program>:
+ 7ee:	ff cf       	rjmp	.-2      	; 0x7ee <__stop_program>
