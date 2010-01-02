@@ -1,5 +1,6 @@
 //02.01.2010 not functional, see ToDo 
 
+
 #include "usart.h"
 
 uint8_t USARTstatus;
