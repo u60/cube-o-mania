@@ -1,87 +1,10 @@
 #include <inttypes.h>
 #include <avr/io.h>
+#include <stdlib.h>
 #include <avr/pgmspace.h>
+#include "globals.h"
 #include "card.h"
 #include "usart.h"
-
-//74HC595 
-//Serial In
-#define DataPort PORTC
-#define DDC_IN1 DDC0
-#define DDC_IN2 DDC1
-#define DDC_IN3 DDC2
-#define DDC_IN4 DDC3
-#define P_IN1 PC0
-#define P_IN2 PC1
-#define P_IN3 PC2
-#define P_IN4 PC3
-
-//Serial Clock
-#define ClockPort PORTB
-#define DDB_T1 DDB1
-#define DDB_SCK DDB2
-#define P_SCK PB2
-
-//Latch (RCK)
-#define LatchPort PORTD
-#define DDD_RCK DDD5
-#define P_RCK PD5
-
-//OE 74HC595 and 74ACT540
-#define DDD_OE	DDD2
-#define P_OE PD2
-
-#define MaxLEDs 3*4*4*4
-#define PWMres 200
- 
-int8_t X, dX, eX, XChanged, YStart, YEnd;
-int8_t PWM[MaxLEDs], dY[MaxLEDs], eY[MaxLEDs];
-
-int8_t fademode = 0;
-int8_t numanimas = 4;
-int8_t Hold, mux, idx;
- 
-struct pattern {
-	uint8_t hold;
-	uint8_t fade;
-	uint8_t pwm[MaxLEDs];
-};
-
-
-struct pattern AnimationA[4] PROGMEM ={
-	{
-	100,2,
-	{
-	0, 0, 0,
-	0, 100, 0,
-	0, 0, 0,
-	20, 20, 20}},
-
-	{
-	50,2,
-	{
-	100,0,0,
-	0,0,0,
-	0,100,100,
-	100,100,100}},
-
-	{
-	25,2,
-	{
-	0,80,0,
-	90,100,0,
-	0,0,0,
-	10,10,10}},
-
-		{
-	10,2,
-	{
-	0,0,0,
-	0,0,0,
-	0,0,0,
-	100,100,100}}, 
-
-};
 
 
 void InitPorts()
@@ -93,7 +16,7 @@ void InitPorts()
 	ClockPort = 0;
 }
 
-void setLED(int state) 
+void SetLevelPins(int state) 
 {
 	DataPort = state;
   	ClockPort &= ~(1 << P_SCK);
@@ -101,7 +24,7 @@ void setLED(int state)
   	ClockPort &= ~(1 << P_SCK);
 }
 
-void latch()
+void Latch()
 {
 	LatchPort &= ~(1 << P_RCK);
 	LatchPort |= (1 << P_RCK);
@@ -116,7 +39,7 @@ void fade() //2 bresenhams
 	while (XChanged != 1)
 	{
 	    if (fademode == 1) XChanged = 1; 
-		for (i = 0; i < MaxLEDs; i++)
+		for (i = 0; i < MaxLedPins; i++)
 		{
 			if (dY[i] > 0) 
 			{
@@ -162,7 +85,8 @@ void fade() //2 bresenhams
 
 int main()
 {
-	unsigned int i, k, patterncntr;
+	volatile unsigned int i, aColumn, aLevel, aLedPin, mask, patterncntr;
+	volatile div_t aDivRes;
 
 	patterncntr = 0;
 	Hold = 0;
@@ -181,15 +105,19 @@ int main()
 			XChanged = 0;
 			dX = pgm_read_byte(&AnimationA[patterncntr].hold);
 			fademode = pgm_read_byte(&AnimationA[patterncntr].fade);
-
-			for (i = 0; i < MaxLEDs; i++)
+			// serialize Level*LedPinsPerLevel -> PWM, dY, Ey for simple fading
+			for (i = 0; i < MaxLedPins; i++)
 			{	
 				eY[i] = 0;
-			  	YStart = pgm_read_byte(&AnimationA[patterncntr].pwm[i]);
+				aDivRes = div(i, LedPinsPerLevel);
+				aLevel = aDivRes.quot;
+				aLedPin = i;
+				aLedPin %= LedPinsPerLevel;
+			  	YStart = pgm_read_byte(&AnimationA[patterncntr].pwm[aLevel][aLedPin]);
 				if (patterncntr < numanimas-1) idx = patterncntr+1; else idx = 0;
-				YEnd = pgm_read_byte(&AnimationA[idx].pwm[i]);
+				YEnd = pgm_read_byte(&AnimationA[idx].pwm[aLevel][aLedPin]);
 				dY[i] = YEnd-YStart;		 
-				PWM[i] = pgm_read_byte(&AnimationA[patterncntr].pwm[i]);
+				PWM[i] = pgm_read_byte(&AnimationA[patterncntr].pwm[aLevel][aLedPin]);
 			}
 			Hold = 0;
 
@@ -204,35 +132,47 @@ int main()
 					CARDloop();
 					USARTloop();
 
-					for (mux=0; mux<2; mux++)
+					for (mux=0; mux < MaxMux; mux++)
 					{
-						for (k=0; k<=5; k++)
+						for (aColumn = 0; aColumn < LedPinsPerColumn; aColumn++)
 						{	
-							idx = k+mux*6;
-							if (i < PWM[idx]) setLED(1); else setLED(0);
+							mask = 0;
+							for (aLevel = 0; aLevel < MaxLevels; aLevel++)
+							{
+								idx = aColumn+mux * LedPinsPerColumn + aLevel * LedPinsPerLevel;
+								if (i < PWM[idx]) mask = mask + (1 << aLevel);
+							}
+							SetLevelPins(mask);
 						}
 						switch (mux)
 						{
 							case 0 :
-							   setLED(0);
-							   setLED(1);
+							   SetLevelPins(15);
+							   SetLevelPins(0);
+							   SetLevelPins(0);
+							   SetLevelPins(0);
 							   break;
 							case 1 :
-							   setLED(1);
-							   setLED(0);
+							   SetLevelPins(0);
+							   SetLevelPins(15);
+							   SetLevelPins(0);
+							   SetLevelPins(0);
 							   break;
 							case 2 :
-							   setLED(1);
-							   setLED(0);
+							   SetLevelPins(0);
+							   SetLevelPins(0);
+							   SetLevelPins(15);
+							   SetLevelPins(0);
 							   break;
 							case 3 :
-							   setLED(1);
-							   setLED(0);
+							   SetLevelPins(0);
+							   SetLevelPins(0);
+							   SetLevelPins(0);
+							   SetLevelPins(15);
 							   break;
 						}	
-						latch();
-					}
-				//	PORTC &= ~(1 << P_G); // OE				
+						Latch();
+					}		
 				}
 			if (fademode == 0)	Hold++;	
 			} 
