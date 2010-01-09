@@ -6,4 +6,11 @@ Name: cube-o-mania
 07.01.10
 - globals.x
 
+09.01.10
+- aufgrund mangelnder Performance des ATMega 
+ - lineare Adressierung der LED-Pins
+ - flimmerfrei nur bis max. 10 PWM-Stufen (PWMres = 10)
+
+ 
+
 

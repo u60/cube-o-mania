@@ -19,9 +19,15 @@ void InitPorts()
 void SetLevelPins(int state) 
 {
 	DataPort = state;
-  	ClockPort &= ~(1 << P_SCK);
+
+ 	ClockPort &= ~(1 << P_SCK);
  	ClockPort |= (1 << P_SCK);
-  	ClockPort &= ~(1 << P_SCK);
+	ClockPort &= ~(1 << P_SCK);
+
+//	ClockPort &= ~(P_SCK_MASK);
+// 	ClockPort |= (P_SCK_MASK);
+//  	ClockPort &= ~(P_SCK_MASK);
+
 }
 
 void Latch()
@@ -85,8 +91,7 @@ void fade() //2 bresenhams
 
 int main()
 {
-	volatile unsigned int i, aColumn, aLevel, aLedPin, mask, patterncntr;
-	volatile div_t aDivRes;
+	volatile unsigned int i, aColumn, aLevel, mask, patterncntr;
 
 	patterncntr = 0;
 	Hold = 0;
@@ -105,19 +110,21 @@ int main()
 			XChanged = 0;
 			dX = pgm_read_byte(&AnimationA[patterncntr].hold);
 			fademode = pgm_read_byte(&AnimationA[patterncntr].fade);
-			// serialize Level*LedPinsPerLevel -> PWM, dY, Ey for simple fading
+
 			for (i = 0; i < MaxLedPins; i++)
 			{	
 				eY[i] = 0;
+				/*
 				aDivRes = div(i, LedPinsPerLevel);
 				aLevel = aDivRes.quot;
 				aLedPin = i;
 				aLedPin %= LedPinsPerLevel;
-			  	YStart = pgm_read_byte(&AnimationA[patterncntr].pwm[aLevel][aLedPin]);
+				*/
+			  	YStart = pgm_read_byte(&AnimationA[patterncntr].pwm[i]);
+				PWM[i] = YStart;
 				if (patterncntr < numanimas-1) idx = patterncntr+1; else idx = 0;
-				YEnd = pgm_read_byte(&AnimationA[idx].pwm[aLevel][aLedPin]);
+				YEnd = pgm_read_byte(&AnimationA[idx].pwm[i]);
 				dY[i] = YEnd-YStart;		 
-				PWM[i] = pgm_read_byte(&AnimationA[patterncntr].pwm[aLevel][aLedPin]);
 			}
 			Hold = 0;
 
@@ -140,9 +147,10 @@ int main()
 							for (aLevel = 0; aLevel < MaxLevels; aLevel++)
 							{
 								idx = aColumn+mux * LedPinsPerColumn + aLevel * LedPinsPerLevel;
-								if (i < PWM[idx]) mask = mask + (1 << aLevel);
+								if (i < PWM[idx]) mask |= (1 << aLevel);
 							}
 							SetLevelPins(mask);
+			
 						}
 						switch (mux)
 						{
@@ -170,7 +178,8 @@ int main()
 							   SetLevelPins(0);
 							   SetLevelPins(15);
 							   break;
-						}	
+						}
+						i = i;	
 						Latch();
 					}		
 				}
