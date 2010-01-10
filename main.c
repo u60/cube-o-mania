@@ -23,10 +23,11 @@ void SetLevelPins(int state)
  	ClockPort &= ~(1 << P_SCK);
  	ClockPort |= (1 << P_SCK);
 	ClockPort &= ~(1 << P_SCK);
-
-//	ClockPort &= ~(P_SCK_MASK);
-// 	ClockPort |= (P_SCK_MASK);
-//  	ClockPort &= ~(P_SCK_MASK);
+/*
+	ClockPort &= ~(P_SCK_MASK);
+ 	ClockPort |= (P_SCK_MASK);
+  	ClockPort &= ~(P_SCK_MASK);
+*/
 
 }
 
@@ -91,7 +92,7 @@ void fade() //2 bresenhams
 
 int main()
 {
-	volatile unsigned int i, aColumn, aLevel, mask, patterncntr;
+	volatile signed int i, aColumn, aLevel, mask, mux, patterncntr;
 
 	patterncntr = 0;
 	Hold = 0;
@@ -138,14 +139,18 @@ int main()
 					
 					CARDloop();
 					USARTloop();
-
-					for (mux=0; mux < MaxMux; mux++)
+					
+					mux = MaxMux;
+					while (mux > 0)
 					{
-						for (aColumn = 0; aColumn < LedPinsPerColumn; aColumn++)
+						mux--;
+						for (aColumn = LedPinsPerColumn-1; aColumn >= 0; aColumn--)
 						{	
 							mask = 0;
-							for (aLevel = 0; aLevel < MaxLevels; aLevel++)
-							{
+							aLevel = MaxLevels;
+							while (aLevel > 0)
+							{	
+								aLevel--;
 								idx = aColumn+mux * LedPinsPerColumn + aLevel * LedPinsPerLevel;
 								if (i < PWM[idx]) mask |= (1 << aLevel);
 							}

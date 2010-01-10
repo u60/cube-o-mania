@@ -41,13 +41,24 @@
 #define LedPinsPerLevel MaxLedsPerLevel*ColorsPerLed
 #define MaxLeds MaxLedsPerLevel*MaxLevels
 #define MaxLedPins ColorsPerLed*MaxLeds
-#define PWMres 10
+#define PWMres 20
+#define Lumi 15
 
-#define RD PWMres, 0, 0
-#define BU 0, PWMres, 0
-#define GN 0, 0, PWMres
-#define WH PWMres, PWMres, PWMres
-#define YE PWMres, 0, PWMres
+
+
+
+
+#define blauespindel 	{ 5,0,	{BU,BK,BK,BK,BK,BU,BK,BK,BK, BK, BU, BK,BK, BK, BK, BU,},},{5,0,{BK, BK, BK, BK,BU, BU, BK, BK,BK, BK, BU, BU,BK, BK, BK, BK,},},{5,0,{BK, BK, BK, BK,BK, BK, BU, BU,BU, BU, BK, BK,BK, BK, BK, BK,},},{5,0,{BK, BK, BK, BU,BK, BK, BU, BK,BK, BU, BK, BK,BU, BK, BK, BK,},},{5,0,{BK, BK, BU, BK,BK, BK, BU, BK,BK, BU, BK, BK,BK, BU, BK, BK,},},{ 5,0,{BK, BU, BK, BK,BK, BU, BK, BK,BK, BK, BU, BK,	BK, BK, BU, BK,},},
+
+
+
+
+
+#define RD Lumi, 0, 0
+#define BU 0, Lumi, 0
+#define GN 0, 0, Lumi
+#define WH Lumi, Lumi, Lumi
+#define YE Lumi, 0, Lumi
 #define BK 0, 0, 0
 
 extern int8_t X, dX, eX, XChanged, YStart, YEnd;
@@ -55,7 +66,7 @@ extern int8_t PWM[MaxLedPins], dY[MaxLedPins], eY[MaxLedPins];
 
 extern uint8_t fademode;
 extern uint8_t numanimas;
-extern uint8_t Hold, mux, idx;
+extern uint8_t Hold, idx;
 
 struct pattern {
 	uint8_t hold;
@@ -63,6 +74,4 @@ struct pattern {
 	uint8_t pwm[MaxLedPins];
 };
 
-extern struct pattern AnimationA[4];
-
-
+extern struct pattern AnimationA[79];
